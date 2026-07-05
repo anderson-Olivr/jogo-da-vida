@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sala - Jogo da Vida</title>
+
+  <link rel="stylesheet" href="../static/css/menu.css">
+  <link rel="stylesheet" href="../static/css/sala.css">
+</head>
+<body>
+
+  <main class="sala-container">
+
+    <header class="topo-sala">
+      <h1>Sala do Jogo</h1>
+      <p>Código da sala: <strong id="codigoSala">----</strong></p>
+      <p>Status: <strong id="statusSala">---</strong></p>
+
+      <button id="btnIniciarPartida" class="btn-iniciar escondido">
+        Iniciar partida
+      </button>
+    </header>
+
+    <section class="area-mensagem">
+      <p id="textoAcao">Aguardando jogadores...</p>
+    </section>
+
+    <section class="area-sorteio">
+      <p>Número sorteado</p>
+      <div id="numeroSorteado" class="numero-sorteado">?</div>
+
+      <button id="btnSortearNumero">Sortear número</button>
+    </section>
+
+    <section class="area-jogadores">
+      <h2>Jogadores</h2>
+      <div id="listaJogadores" class="lista-jogadores"></div>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../static/js/supabase.js"></script>
+  <script src="../static/js/sala.js"></script>
+</body>
+</html>

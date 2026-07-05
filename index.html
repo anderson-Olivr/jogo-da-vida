@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jogo da Vida</title>
+
+  <link rel="stylesheet" href="static/css/menu.css" />
+</head>
+<body>
+
+  <main class="container">
+    <img src="img/img-logo/logo.png" alt="Jogo da Vida" class="logo">
+
+    <h1>Jogo da Vida</h1>
+
+    <section class="card">
+      <label for="apelido">Seu apelido</label>
+
+      <div class="linha-apelido">
+        <input type="text" id="apelido" placeholder="Digite seu nome" maxlength="20">
+
+        <button id="btnPersonagem" class="btn-personagem">
+          <img id="personagemSelecionado" src="" alt="Personagem">
+          Escolher
+        </button>
+      </div>
+
+      <p id="erro" class="erro"></p>
+
+      <div class="botoes-menu">
+        <button id="btnCriarSala">Criar sala</button>
+        <button id="btnEntrarSala">Entrar na sala</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="modalPersonagem" class="modal escondido">
+    <div class="modal-conteudo">
+      <h2>Escolha seu personagem</h2>
+      <div id="listaPersonagens" class="lista-personagens"></div>
+      <button id="fecharModal" class="btn-fechar">Fechar</button>
+    </div>
+  </div>
+
+  <div id="modalCodigoSala" class="modal escondido">
+    <div class="modal-conteudo">
+      <h2>Entrar na sala</h2>
+
+      <input type="text" id="inputCodigoSala" placeholder="Digite o código da sala">
+      <p id="erroCodigoSala" class="erro"></p>
+
+      <button id="btnConfirmarEntrada">Entrar</button>
+      <button id="btnFecharCodigo" class="btn-fechar">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="static/js/supabase.js"></script>
+  <script src="static/js/menu.js"></script>
+</body>
+</html>

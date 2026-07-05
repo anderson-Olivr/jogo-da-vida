@@ -1,0 +1,162 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1c1c1c, #3b0a57);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 430px;
+  padding: 20px;
+  text-align: center;
+}
+
+.logo {
+  width: 120px;
+  max-width: 80%;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+label {
+  display: block;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.linha-apelido {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.btn-personagem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f4c542;
+}
+
+.btn-personagem img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: none;
+  object-fit: cover;
+}
+
+.botoes-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+#btnCriarSala {
+  background: #35d07f;
+}
+
+#btnEntrarSala {
+  background: #4aa3ff;
+}
+
+.erro {
+  color: #ff7676;
+  font-size: 14px;
+  min-height: 18px;
+  text-align: left;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.escondido {
+  display: none;
+}
+
+.modal-conteudo {
+  background: #222;
+  padding: 20px;
+  border-radius: 18px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.lista-personagens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.personagem-opcao {
+  background: #333;
+  border-radius: 14px;
+  padding: 8px;
+  cursor: pointer;
+  border: 3px solid transparent;
+}
+
+.personagem-opcao:hover {
+  border-color: #f4c542;
+}
+
+.personagem-opcao.selecionado {
+  border-color: #35d07f;
+}
+
+.personagem-opcao img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.btn-fechar {
+  background: #ff5757;
+  color: white;
+  width: 100%;
+}
