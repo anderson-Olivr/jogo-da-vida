@@ -17,7 +17,8 @@ const codigoUrl = params.get("codigo");
 
 const codigoSala = codigoUrl || localStorage.getItem("codigoSala");
 const jogadorIdLocal = localStorage.getItem("jogadorId");
-const isAdmin = localStorage.getItem("isAdmin") === "true";
+let isAdmin = false;
+let jogadorLocal = null;
 
 const descricoes = {
   0: "Vida extra: ganha +1 vida.",
@@ -89,6 +90,13 @@ async function carregarJogadores() {
   }
 
   jogadores = data;
+
+  jogadorLocal = jogadores.find(j => j.id === jogadorIdLocal);
+
+  if (jogadorLocal) {
+    isAdmin = jogadorLocal.is_admin === true;
+    localStorage.setItem("isAdmin", isAdmin ? "true" : "false");
+  }
 }
 
 function renderizarTudo() {
@@ -585,11 +593,14 @@ function ouvirTempoReal() {
       schema: "public",
       table: "jogadores",
       filter: `sala_id=eq.${salaAtual.id}`
-    }, async () => {
+    }, async payload => {
+      console.log("Mudança em jogadores:", payload);
       await carregarJogadores();
       renderizarTudo();
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Realtime status:", status);
+    });
 }
 
 btnIniciarPartida.addEventListener("click", iniciarPartida);
