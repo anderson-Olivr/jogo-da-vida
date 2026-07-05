@@ -133,3 +133,65 @@
     font-size: 45px;
   }
 }
+.descricao-numero {
+  margin-top: -5px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #f4c542;
+}
+
+.layout-jogo {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+}
+
+.cemiterio {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 18px;
+  padding: 15px;
+  min-height: 250px;
+}
+
+.cemiterio h2 {
+  text-align: center;
+  font-size: 20px;
+}
+
+.morto-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.08);
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.morto-card img {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  filter: grayscale(1);
+  object-fit: cover;
+}
+
+.jogador-turno {
+  outline: 4px solid #35d07f;
+  box-shadow: 0 0 18px #35d07f;
+}
+
+.card-jogador {
+  cursor: pointer;
+}
+
+@media (max-width: 800px) {
+  .layout-jogo {
+    grid-template-columns: 1fr;
+  }
+
+  .cemiterio {
+    order: 2;
+  }
+}

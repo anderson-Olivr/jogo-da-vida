@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Sala - Jogo da Vida</title>
 
   <link rel="stylesheet" href="../static/css/menu.css">
@@ -14,9 +13,10 @@
   <main class="sala-container">
 
     <header class="topo-sala">
-      <h1>Sala do Jogo</h1>
-      <p>Código da sala: <strong id="codigoSala">----</strong></p>
+      <h1>Jogo da Vida</h1>
+      <p>Código: <strong id="codigoSala">----</strong></p>
       <p>Status: <strong id="statusSala">---</strong></p>
+      <p>Turno de: <strong id="jogadorDaVez">---</strong></p>
 
       <button id="btnIniciarPartida" class="btn-iniciar escondido">
         Iniciar partida
@@ -30,13 +30,23 @@
     <section class="area-sorteio">
       <p>Número sorteado</p>
       <div id="numeroSorteado" class="numero-sorteado">?</div>
+      <p id="descricaoNumero" class="descricao-numero"></p>
 
       <button id="btnSortearNumero">Sortear número</button>
     </section>
 
-    <section class="area-jogadores">
-      <h2>Jogadores</h2>
-      <div id="listaJogadores" class="lista-jogadores"></div>
+    <section class="layout-jogo">
+
+      <aside class="cemiterio">
+        <h2>☠ Cemitério</h2>
+        <div id="listaMortos"></div>
+      </aside>
+
+      <section class="area-jogadores">
+        <h2>Jogadores vivos</h2>
+        <div id="listaJogadores" class="lista-jogadores"></div>
+      </section>
+
     </section>
 
   </main>
