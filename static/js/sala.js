@@ -28,8 +28,8 @@ const descricoes = {
   2: "Roubo: escolha alguém para roubar 1 vida.",
   3: "Troca de ordem: escolha alguém para trocar posição, vidas e maldição.",
   4: "Morte: escolha alguém para matar.",
-  5: "Maldição: de 1 a 4 jogadores aleatórios perdem 1 vida.",
-  6: "Amaldiçoar: escolha alguém para receber uma maldição de 3 turnos.",
+  5: "Sacrifício em massa: de 1 a 4 jogadores aleatórios perdem 1 vida.",
+  6: "Amaldiçoar: escolha alguém para receber uma maldição de 3 turnos próprios.",
   7: "Reviver: escolha alguém do cemitério para reviver.",
   8: "Doação: escolha alguém para receber 1 vida sua.",
   9: "Alma gêmea: escolha alguém sem alma gêmea para criar vínculo."
@@ -76,7 +76,6 @@ async function carregarSala() {
   }
 
   salaAtual = data;
-
   localStorage.setItem("salaId", data.id);
   localStorage.setItem("codigoSala", data.codigo);
 
@@ -115,7 +114,6 @@ async function carregarJogadores() {
   }
 
   jogadores = data || [];
-
   jogadorLocal = jogadores.find(j => j.id === jogadorIdLocal);
 
   if (jogadorLocal) {
@@ -141,14 +139,7 @@ function renderizarSala() {
     salaAtual.numero_sorteado === null ? "?" : salaAtual.numero_sorteado;
 
   descricaoNumero.textContent = salaAtual.descricao_numero || "";
-
-  if (salaAtual.status === "jogando") {
-    textoAcao.textContent = daVez
-      ? `Turno de ${daVez.nome}.`
-      : "Aguardando jogador da vez...";
-  } else {
-    textoAcao.textContent = salaAtual.texto_acao || "Aguardando jogadores...";
-  }
+  textoAcao.textContent = salaAtual.texto_acao || "Aguardando jogadores...";
 
   if (isAdmin && salaAtual.status !== "jogando") {
     btnIniciarPartida.classList.remove("escondido");
@@ -183,6 +174,14 @@ function renderizarJogadores() {
       card.classList.add("jogador-turno");
     }
 
+    if (jogador.amaldicoado) {
+      card.classList.add("card-amaldicoado");
+    }
+
+    if (jogador.alma_gemea_id) {
+      card.classList.add("card-alma-gemea");
+    }
+
     const img = document.createElement("img");
     img.src = caminhoImagem(jogador.imagem);
     img.classList.add("img-jogador");
@@ -193,28 +192,27 @@ function renderizarJogadores() {
 
     if (jogador.is_admin) nome.innerHTML += " 👑";
 
-    if (jogador.amaldicoado) {
-      const contadorVisual = Math.max(jogador.maldicao_turnos - 1, 1);
-      nome.innerHTML += ` ☠${contadorVisual}`;
-    }
-
     const vidas = document.createElement("div");
     vidas.classList.add("vidas-jogador");
     vidas.textContent = "❤️ " + jogador.vidas;
 
-    const alma = document.createElement("div");
-    alma.classList.add("alma-gemea");
-    alma.textContent = jogador.alma_gemea_id
-      ? `☯ ${nomeAlmaGemea(jogador.alma_gemea_id)}`
-      : "Sem alma gêmea";
+    const status = document.createElement("div");
+    status.classList.add("status-jogador");
+
+    if (jogador.amaldicoado) {
+      status.innerHTML += `<span class="tag-maldicao">☠ Maldição: ${jogador.maldicao_turnos}</span>`;
+    }
+
+    if (jogador.alma_gemea_id) {
+      status.innerHTML += `<span class="tag-alma">☯ Alma: ${nomeAlmaGemea(jogador.alma_gemea_id)}</span>`;
+    }
 
     card.appendChild(img);
     card.appendChild(nome);
     card.appendChild(vidas);
-    card.appendChild(alma);
+    card.appendChild(status);
 
     card.addEventListener("click", () => escolherJogador(jogador));
-
     listaJogadores.appendChild(card);
   });
 }
@@ -237,7 +235,6 @@ function renderizarMortos() {
     `;
 
     div.addEventListener("click", () => escolherJogador(jogador));
-
     listaMortos.appendChild(div);
   });
 }
@@ -314,7 +311,6 @@ async function iniciarPartida() {
       .eq("id", embaralhados[i].id);
 
     if (error) {
-      console.error("Erro ao atualizar jogador:", error);
       alert("Erro ao atualizar jogador: " + error.message);
       return;
     }
@@ -330,14 +326,13 @@ async function iniciarPartida() {
       acao_pendente: null,
       jogador_acao_id: null,
       descricao_numero: "",
-      texto_acao: "Partida iniciada! O jogador da vez deve sortear."
+      texto_acao: "Partida iniciada! O primeiro jogador deve sortear."
     })
     .eq("id", salaAtual.id)
     .select()
     .single();
 
   if (error) {
-    console.error("Erro ao iniciar sala:", error);
     alert("Erro ao iniciar sala: " + error.message);
     return;
   }
@@ -376,7 +371,6 @@ async function sortearNumero() {
     .eq("id", salaAtual.id);
 
   if (error) {
-    console.error("Erro ao sortear número:", error);
     alert("Erro ao sortear número: " + error.message);
     return;
   }
@@ -389,21 +383,23 @@ async function sortearNumero() {
 }
 
 async function executarAcaoAutomatica(numero, jogador) {
+  let mensagem = "";
+
   if (numero === 0) {
     await alterarVida(jogador.id, 1, true);
-    await atualizarTexto(`${jogador.nome} ganhou 1 vida.`);
+    mensagem = `${jogador.nome} ganhou 1 vida.`;
   }
 
   if (numero === 1) {
     await alterarVida(jogador.id, -1, true);
-    await atualizarTexto(`${jogador.nome} perdeu 1 vida.`);
+    mensagem = `${jogador.nome} perdeu 1 vida.`;
   }
 
   if (numero === 5) {
-    await executarMaldicaoAleatoria(jogador.id);
+    mensagem = await executarMaldicaoAleatoria(jogador.id);
   }
 
-  await finalizarTurno();
+  await finalizarTurno(mensagem);
 }
 
 async function escolherJogador(alvo) {
@@ -423,34 +419,37 @@ async function escolherJogador(alvo) {
     return;
   }
 
-  if (acao === 2) await roubarVida(jogador, alvo);
-  if (acao === 3) await trocarPosicao(jogador, alvo);
-  if (acao === 4) await matarJogador(alvo.id, jogador.id);
-  if (acao === 6) await amaldicoarJogador(alvo);
-  if (acao === 7) await reviverJogador(alvo);
-  if (acao === 8) await doarVida(jogador, alvo);
-  if (acao === 9) await criarAlmaGemea(jogador, alvo);
+  let mensagem = "";
 
-  await finalizarTurno();
+  if (acao === 2) mensagem = await roubarVida(jogador, alvo);
+  if (acao === 3) mensagem = await trocarPosicao(jogador, alvo);
+  if (acao === 4) mensagem = await matarJogador(alvo.id, jogador.id, `${jogador.nome} matou ${alvo.nome}.`);
+  if (acao === 6) mensagem = await amaldicoarJogador(jogador, alvo);
+  if (acao === 7) mensagem = await reviverJogador(jogador, alvo);
+  if (acao === 8) mensagem = await doarVida(jogador, alvo);
+  if (acao === 9) mensagem = await criarAlmaGemea(jogador, alvo);
+
+  await finalizarTurno(mensagem);
 }
 
 async function alterarVida(jogadorId, quantidade, afetaAlmaGemea) {
   await carregarJogadores();
 
   const jogador = jogadores.find(j => j.id === jogadorId);
-  if (!jogador || !jogador.vivo) return;
+  if (!jogador || !jogador.vivo) return "";
+
+  let mensagens = [];
 
   const novaVida = jogador.vidas + quantidade;
 
   if (novaVida <= 0) {
-    await matarJogador(jogador.id, null);
+    const msg = await matarJogador(jogador.id, null, `${jogador.nome} morreu por perder toda a vida.`);
+    if (msg) mensagens.push(msg);
   } else {
-    const { error } = await db
+    await db
       .from("jogadores")
       .update({ vidas: novaVida })
       .eq("id", jogador.id);
-
-    if (error) console.error("Erro ao alterar vida:", error);
   }
 
   if (afetaAlmaGemea && jogador.alma_gemea_id) {
@@ -462,38 +461,39 @@ async function alterarVida(jogadorId, quantidade, afetaAlmaGemea) {
       const novaVidaAlma = alma.vidas + quantidade;
 
       if (novaVidaAlma <= 0) {
-        await matarJogador(alma.id, null);
+        const msg = await matarJogador(alma.id, null, `${alma.nome}, alma gêmea de ${jogador.nome}, morreu junto.`);
+        if (msg) mensagens.push(msg);
       } else {
-        const { error } = await db
+        await db
           .from("jogadores")
           .update({ vidas: novaVidaAlma })
           .eq("id", alma.id);
-
-        if (error) console.error("Erro ao alterar vida da alma gêmea:", error);
       }
     }
   }
+
+  return mensagens.join(" ");
 }
 
 async function roubarVida(jogador, alvo) {
-  if (alvo.vidas <= 0) return;
+  if (alvo.vidas <= 0) return "";
 
   await alterarVida(alvo.id, -1, false);
   await alterarVida(jogador.id, 1, true);
 
-  await atualizarTexto(`${jogador.nome} roubou 1 vida de ${alvo.nome}.`);
+  return `${jogador.nome} roubou 1 vida de ${alvo.nome}.`;
 }
 
 async function doarVida(jogador, alvo) {
+  await alterarVida(alvo.id, 1, false);
+
   if (jogador.vidas <= 1) {
-    await matarJogador(jogador.id, null);
+    await matarJogador(jogador.id, null, `${jogador.nome} doou sua última vida e morreu.`);
   } else {
     await alterarVida(jogador.id, -1, false);
   }
 
-  await alterarVida(alvo.id, 1, false);
-
-  await atualizarTexto(`${jogador.nome} doou 1 vida para ${alvo.nome}.`);
+  return `${jogador.nome} doou 1 vida para ${alvo.nome}.`;
 }
 
 async function trocarPosicao(jogador, alvo) {
@@ -509,7 +509,7 @@ async function trocarPosicao(jogador, alvo) {
   const maldB = alvo.amaldicoado;
   const turnosB = alvo.maldicao_turnos;
 
-  const { error: erroA } = await db
+  await db
     .from("jogadores")
     .update({
       posicao: posB,
@@ -519,12 +519,7 @@ async function trocarPosicao(jogador, alvo) {
     })
     .eq("id", jogador.id);
 
-  if (erroA) {
-    console.error("Erro ao trocar jogador A:", erroA);
-    return;
-  }
-
-  const { error: erroB } = await db
+  await db
     .from("jogadores")
     .update({
       posicao: posA,
@@ -534,23 +529,19 @@ async function trocarPosicao(jogador, alvo) {
     })
     .eq("id", alvo.id);
 
-  if (erroB) {
-    console.error("Erro ao trocar jogador B:", erroB);
-    return;
-  }
-
-  await atualizarTexto(`${jogador.nome} trocou de posição com ${alvo.nome}.`);
+  return `${jogador.nome} trocou de posição com ${alvo.nome}.`;
 }
 
-async function matarJogador(jogadorId, assassinoId) {
+async function matarJogador(jogadorId, assassinoId = null, mensagemBase = "") {
   await carregarJogadores();
 
   const jogador = jogadores.find(j => j.id === jogadorId);
-  if (!jogador || !jogador.vivo) return;
+  if (!jogador || !jogador.vivo) return mensagemBase;
 
   const almaId = jogador.alma_gemea_id;
+  let mensagem = mensagemBase || `${jogador.nome} morreu.`;
 
-  const { error } = await db
+  await db
     .from("jogadores")
     .update({
       vivo: false,
@@ -561,11 +552,6 @@ async function matarJogador(jogadorId, assassinoId) {
       alma_gemea_id: null
     })
     .eq("id", jogador.id);
-
-  if (error) {
-    console.error("Erro ao matar jogador:", error);
-    return;
-  }
 
   if (almaId) {
     await carregarJogadores();
@@ -579,7 +565,7 @@ async function matarJogador(jogadorId, assassinoId) {
           .update({ alma_gemea_id: null })
           .eq("id", alma.id);
 
-        await atualizarTexto(`${alma.nome} matou sua própria alma gêmea. O vínculo foi desfeito.`);
+        mensagem += ` ${alma.nome} matou sua própria alma gêmea, então o vínculo foi desfeito.`;
       } else {
         await db
           .from("jogadores")
@@ -593,13 +579,15 @@ async function matarJogador(jogadorId, assassinoId) {
           })
           .eq("id", alma.id);
 
-        await atualizarTexto(`${jogador.nome} morreu e levou sua alma gêmea ${alma.nome} junto.`);
+        mensagem += ` Como ${alma.nome} era sua alma gêmea, morreu junto.`;
       }
     }
   }
 
   await limparAlmasGemeasInvalidas();
   await reorganizarPosicoes();
+
+  return mensagem;
 }
 
 async function limparAlmasGemeasInvalidas() {
@@ -625,12 +613,10 @@ async function reorganizarPosicoes() {
   const vivosOrdenados = vivos();
 
   for (let i = 0; i < vivosOrdenados.length; i++) {
-    const { error } = await db
+    await db
       .from("jogadores")
       .update({ posicao: i + 1 })
       .eq("id", vivosOrdenados[i].id);
-
-    if (error) console.error("Erro ao reorganizar posição:", error);
   }
 }
 
@@ -640,8 +626,7 @@ async function executarMaldicaoAleatoria(jogadorIdProtegido) {
   const alvosPossiveis = vivos().filter(j => j.id !== jogadorIdProtegido);
 
   if (alvosPossiveis.length === 0) {
-    await atualizarTexto("Maldição não atingiu ninguém.");
-    return;
+    return "Sacrifício em massa... ninguém foi atingido.";
   }
 
   const quantidade = Math.min(
@@ -658,30 +643,25 @@ async function executarMaldicaoAleatoria(jogadorIdProtegido) {
   }
 
   const nomes = sorteados.map(j => j.nome).join(", ");
-  await atualizarTexto(`Maldição atingiu ${quantidade} jogador(es): ${nomes}.`);
+  return `Sacrifício em massa... os jogador(es) ${nomes} perderam 1 ponto de vida.`;
 }
 
-async function amaldicoarJogador(alvo) {
-  const { error } = await db
+async function amaldicoarJogador(jogador, alvo) {
+  await db
     .from("jogadores")
     .update({
       amaldicoado: true,
-      maldicao_turnos: 4
+      maldicao_turnos: 3
     })
     .eq("id", alvo.id);
 
-  if (error) {
-    console.error("Erro ao amaldiçoar jogador:", error);
-    return;
-  }
-
-  await atualizarTexto(`${alvo.nome} foi amaldiçoado por 3 turnos.`);
+  return `${jogador.nome} amaldiçoou ${alvo.nome}.`;
 }
 
-async function reviverJogador(alvo) {
+async function reviverJogador(jogador, alvo) {
   const ultimaPosicao = vivos().length + 1;
 
-  const { error } = await db
+  await db
     .from("jogadores")
     .update({
       vivo: true,
@@ -694,69 +674,52 @@ async function reviverJogador(alvo) {
     })
     .eq("id", alvo.id);
 
-  if (error) {
-    console.error("Erro ao reviver jogador:", error);
-    return;
-  }
-
-  await atualizarTexto(`${alvo.nome} foi revivido com 1 vida.`);
+  return `${jogador.nome} reviveu ${alvo.nome} com 1 vida.`;
 }
 
 async function criarAlmaGemea(jogador, alvo) {
   if (jogador.alma_gemea_id || alvo.alma_gemea_id) {
-    await atualizarTexto("Um dos jogadores já possui alma gêmea.");
-    return;
+    return "Um dos jogadores já possui alma gêmea.";
   }
 
-  const { error: erroA } = await db
+  await db
     .from("jogadores")
     .update({ alma_gemea_id: alvo.id })
     .eq("id", jogador.id);
 
-  if (erroA) {
-    console.error("Erro ao criar alma gêmea A:", erroA);
-    return;
-  }
-
-  const { error: erroB } = await db
+  await db
     .from("jogadores")
     .update({ alma_gemea_id: jogador.id })
     .eq("id", alvo.id);
 
-  if (erroB) {
-    console.error("Erro ao criar alma gêmea B:", erroB);
-    return;
-  }
-
-  await atualizarTexto(`${jogador.nome} e ${alvo.nome} agora são almas gêmeas.`);
+  return `${jogador.nome} e ${alvo.nome} agora são almas gêmeas.`;
 }
 
-async function reduzirMaldicoes() {
-  await carregarJogadores();
+async function aplicarMaldicaoDoTurno(jogador) {
+  if (!jogador || !jogador.vivo || !jogador.amaldicoado) return "";
 
-  const lista = vivos().filter(j => j.amaldicoado);
+  const novoValor = jogador.maldicao_turnos - 1;
 
-  for (const j of lista) {
-    const novoValor = j.maldicao_turnos - 1;
-
-    if (novoValor <= 0) {
-      await matarJogador(j.id, null);
-    } else {
-      const { error } = await db
-        .from("jogadores")
-        .update({ maldicao_turnos: novoValor })
-        .eq("id", j.id);
-
-      if (error) console.error("Erro ao reduzir maldição:", error);
-    }
+  if (novoValor <= 0) {
+    return await matarJogador(
+      jogador.id,
+      null,
+      `${jogador.nome} não escapou da maldição e morreu.`
+    );
   }
+
+  await db
+    .from("jogadores")
+    .update({ maldicao_turnos: novoValor })
+    .eq("id", jogador.id);
+
+  return `${jogador.nome} sentiu a maldição se aproximando. Restam ${novoValor} turno(s).`;
 }
 
-async function finalizarTurno() {
-  await reduzirMaldicoes();
+async function finalizarTurno(mensagemAcao = "") {
   await carregarJogadores();
 
-  const vivosAgora = vivos();
+  let vivosAgora = vivos();
 
   if (vivosAgora.length <= 1) {
     const vencedor = vivosAgora[0];
@@ -767,7 +730,6 @@ async function finalizarTurno() {
         status: "encerrado",
         acao_pendente: null,
         jogador_acao_id: null,
-        descricao_numero: "",
         texto_acao: vencedor ? `🏆 ${vencedor.nome} venceu!` : "Todos morreram!"
       })
       .eq("id", salaAtual.id);
@@ -781,32 +743,55 @@ async function finalizarTurno() {
     proximaPosicao = 1;
   }
 
-  const proximoJogador = vivosAgora.find(j => j.posicao === proximaPosicao);
+  let proximoJogador = vivosAgora.find(j => j.posicao === proximaPosicao);
+
+  let mensagemMaldicao = await aplicarMaldicaoDoTurno(proximoJogador);
+
+  await carregarJogadores();
+  vivosAgora = vivos();
+
+  if (vivosAgora.length <= 1) {
+    const vencedor = vivosAgora[0];
+
+    await db
+      .from("salas")
+      .update({
+        status: "encerrado",
+        acao_pendente: null,
+        jogador_acao_id: null,
+        texto_acao: vencedor ? `🏆 ${vencedor.nome} venceu!` : "Todos morreram!"
+      })
+      .eq("id", salaAtual.id);
+
+    return;
+  }
+
+  if (mensagemMaldicao && (!proximoJogador || !vivosAgora.some(j => j.id === proximoJogador.id))) {
+    proximaPosicao = proximaPosicao > vivosAgora.length ? 1 : proximaPosicao;
+  }
+
+  proximoJogador = vivosAgora.find(j => j.posicao === proximaPosicao) || vivosAgora[0];
+
+  const mensagemFinal = [mensagemAcao, mensagemMaldicao]
+    .filter(Boolean)
+    .join(" ");
 
   await db
     .from("salas")
     .update({
-      turno_posicao: proximaPosicao,
+      turno_posicao: proximoJogador.posicao,
       acao_pendente: null,
       jogador_acao_id: null,
-      numero_sorteado: null,
-      descricao_numero: "",
-      texto_acao: proximoJogador
-        ? `Turno de ${proximoJogador.nome}.`
-        : "Próximo turno."
+      texto_acao: mensagemFinal || `Turno de ${proximoJogador.nome}.`
     })
     .eq("id", salaAtual.id);
 }
 
 async function atualizarTexto(texto) {
-  const { error } = await db
+  await db
     .from("salas")
     .update({ texto_acao: texto })
     .eq("id", salaAtual.id);
-
-  if (error) {
-    console.error("Erro ao atualizar texto:", error);
-  }
 }
 
 function ouvirTempoReal() {

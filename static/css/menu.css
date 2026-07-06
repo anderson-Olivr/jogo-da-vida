@@ -21,9 +21,9 @@ body {
 }
 
 .logo {
-  width: 120px;
-  max-width: 80%;
-  margin-bottom: 10px;
+  width: 300px;
+  max-width: 200%;
+  margin-bottom:0px;
 }
 
 h1 {
