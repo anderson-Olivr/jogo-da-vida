@@ -9,6 +9,12 @@ const jogadorDaVezTexto = document.getElementById("jogadorDaVez");
 const btnIniciarPartida = document.getElementById("btnIniciarPartida");
 const textoAcao = document.getElementById("textoAcao");
 
+const modalExpulsar = document.getElementById("modalExpulsar");
+const textoModalExpulsar = document.getElementById("textoModalExpulsar");
+const btnConfirmarExpulsao = document.getElementById("btnConfirmarExpulsao");
+const btnCancelarExpulsao = document.getElementById("btnCancelarExpulsao");
+
+let jogadorParaExpulsar = null;
 let salaAtual = null;
 let jogadores = [];
 let canalRealtime = null;
@@ -35,21 +41,34 @@ const descricoes = {
   9: "Alma gêmea: escolha alguém sem alma gêmea para criar vínculo."
 };
 
+function jogadorAtivo(jogador) {
+  return jogador && jogador.status !== "expulso" && jogador.status !== "saiu";
+}
+
 function vivos() {
-  return jogadores.filter(j => j.vivo).sort((a, b) => a.posicao - b.posicao);
+  return jogadores
+    .filter(j => j.vivo && jogadorAtivo(j))
+    .sort((a, b) => a.posicao - b.posicao);
 }
 
 function mortos() {
-  return jogadores.filter(j => !j.vivo);
+  return jogadores.filter(j => !j.vivo && jogadorAtivo(j));
 }
 
 function jogadorDaVez() {
-  return jogadores.find(j => j.vivo && j.posicao === salaAtual.turno_posicao);
+  return jogadores.find(j =>
+    j.vivo &&
+    jogadorAtivo(j) &&
+    j.posicao === salaAtual.turno_posicao
+  );
 }
 
 function souJogadorDaVez() {
   const jogador = jogadores.find(j => j.id === jogadorIdLocal);
-  return jogador && jogador.vivo && jogador.posicao === salaAtual.turno_posicao;
+  return jogador &&
+    jogador.vivo &&
+    jogadorAtivo(jogador) &&
+    jogador.posicao === salaAtual.turno_posicao;
 }
 
 function caminhoImagem(imagem) {
@@ -113,7 +132,7 @@ async function carregarJogadores() {
     return;
   }
 
-  jogadores = data || [];
+  jogadores = (data || []).filter(j => jogadorAtivo(j));
   jogadorLocal = jogadores.find(j => j.id === jogadorIdLocal);
 
   if (jogadorLocal) {
@@ -182,6 +201,20 @@ function renderizarJogadores() {
       card.classList.add("card-alma-gemea");
     }
 
+    if (isAdmin && jogador.id !== jogadorIdLocal) {
+      const btnExpulsar = document.createElement("button");
+      btnExpulsar.classList.add("btn-expulsar-jogador");
+      btnExpulsar.textContent = "×";
+      btnExpulsar.title = "Expulsar jogador";
+
+      btnExpulsar.addEventListener("click", event => {
+        event.stopPropagation();
+        abrirModalExpulsar(jogador);
+      });
+
+      card.appendChild(btnExpulsar);
+    }
+
     const img = document.createElement("img");
     img.src = caminhoImagem(jogador.imagem);
     img.classList.add("img-jogador");
@@ -247,8 +280,15 @@ function existeAlvoValido(numero, jogador) {
     return vivosLista.some(j => j.id !== jogador.id && j.vidas > 0);
   }
 
-  if ([3, 4, 6, 8].includes(numero)) {
+  if ([3, 4, 8].includes(numero)) {
     return vivosLista.some(j => j.id !== jogador.id);
+  }
+
+  if (numero === 6) {
+    return vivosLista.some(j =>
+      j.id !== jogador.id &&
+      !j.amaldicoado
+    );
   }
 
   if (numero === 7) {
@@ -306,7 +346,8 @@ async function iniciarPartida() {
         amaldicoado: false,
         maldicao_turnos: 0,
         alma_gemea_id: null,
-        morto_em: null
+        morto_em: null,
+        status: "ativo"
       })
       .eq("id", embaralhados[i].id);
 
@@ -414,6 +455,11 @@ async function escolherJogador(alvo) {
   if (acao === 7 && alvo.vivo) return;
   if (alvo.id === jogador.id) return;
 
+  if (acao === 6 && alvo.amaldicoado) {
+    await atualizarTexto(`${alvo.nome} já está amaldiçoado e não pode receber outra maldição.`);
+    return;
+  }
+
   if (acao === 9 && (jogador.alma_gemea_id || alvo.alma_gemea_id)) {
     await atualizarTexto("Não é possível criar alma gêmea: um dos jogadores já possui vínculo.");
     return;
@@ -439,7 +485,6 @@ async function alterarVida(jogadorId, quantidade, afetaAlmaGemea) {
   if (!jogador || !jogador.vivo) return "";
 
   let mensagens = [];
-
   const novaVida = jogador.vidas + quantidade;
 
   if (novaVida <= 0) {
@@ -647,6 +692,10 @@ async function executarMaldicaoAleatoria(jogadorIdProtegido) {
 }
 
 async function amaldicoarJogador(jogador, alvo) {
+  if (alvo.amaldicoado) {
+    return `${alvo.nome} já está amaldiçoado e não pode receber outra maldição.`;
+  }
+
   await db
     .from("jogadores")
     .update({
@@ -670,7 +719,8 @@ async function reviverJogador(jogador, alvo) {
       morto_em: null,
       amaldicoado: false,
       maldicao_turnos: 0,
-      alma_gemea_id: null
+      alma_gemea_id: null,
+      status: "ativo"
     })
     .eq("id", alvo.id);
 
@@ -794,6 +844,68 @@ async function atualizarTexto(texto) {
     .eq("id", salaAtual.id);
 }
 
+function abrirModalExpulsar(jogador) {
+  jogadorParaExpulsar = jogador;
+  textoModalExpulsar.textContent = `Deseja expulsar ${jogador.nome} da partida?`;
+  modalExpulsar.classList.remove("escondido");
+}
+
+function fecharModalExpulsar() {
+  jogadorParaExpulsar = null;
+  modalExpulsar.classList.add("escondido");
+}
+
+async function confirmarExpulsao() {
+  if (!isAdmin || !jogadorParaExpulsar) return;
+
+  const nomeExpulso = jogadorParaExpulsar.nome;
+
+  const { error } = await db
+    .from("jogadores")
+    .update({
+      status: "expulso",
+      vivo: false,
+      vidas: 0,
+      amaldicoado: false,
+      maldicao_turnos: 0,
+      alma_gemea_id: null
+    })
+    .eq("id", jogadorParaExpulsar.id);
+
+  if (error) {
+    alert("Erro ao expulsar jogador: " + error.message);
+    return;
+  }
+
+  await atualizarTexto(`${nomeExpulso} foi expulso da partida.`);
+  fecharModalExpulsar();
+  await limparAlmasGemeasInvalidas();
+  await reorganizarPosicoes();
+  await carregarSalaSemRealtime();
+}
+
+async function atualizarMinhaAtividade() {
+  if (!jogadorIdLocal) return;
+
+  await db
+    .from("jogadores")
+    .update({
+      ultima_atividade: new Date().toISOString()
+    })
+    .eq("id", jogadorIdLocal);
+}
+
+async function marcarComoSaiu() {
+  if (!jogadorIdLocal) return;
+
+  await db
+    .from("jogadores")
+    .update({
+      status: "saiu"
+    })
+    .eq("id", jogadorIdLocal);
+}
+
 function ouvirTempoReal() {
   if (canalRealtime) {
     db.removeChannel(canalRealtime);
@@ -816,12 +928,24 @@ function ouvirTempoReal() {
     }, async () => {
       await carregarSalaSemRealtime();
     })
-    .subscribe((status) => {
+    .subscribe(status => {
       console.log("Realtime status:", status);
     });
 }
 
 btnIniciarPartida.addEventListener("click", iniciarPartida);
 btnSortearNumero.addEventListener("click", sortearNumero);
+
+if (btnConfirmarExpulsao) {
+  btnConfirmarExpulsao.addEventListener("click", confirmarExpulsao);
+}
+
+if (btnCancelarExpulsao) {
+  btnCancelarExpulsao.addEventListener("click", fecharModalExpulsar);
+}
+
+setInterval(atualizarMinhaAtividade, 5000);
+
+window.addEventListener("beforeunload", marcarComoSaiu);
 
 carregarSala();

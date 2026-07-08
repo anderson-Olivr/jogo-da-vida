@@ -195,6 +195,71 @@
     order: 2;
   }
 }
+
+.btn-expulsar-jogador {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: #c40000;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 20px;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.btn-expulsar-jogador:hover {
+  background: #ff2222;
+}
+
+.modal-expulsar {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-expulsar-conteudo {
+  background: #1f1f1f;
+  color: white;
+  padding: 25px;
+  border-radius: 18px;
+  width: 90%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+}
+
+.modal-botoes {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-confirmar-expulsao {
+  background: #c40000;
+  color: white;
+}
+
+.btn-cancelar-expulsao {
+  background: #444;
+  color: white;
+}
+
+.card-jogador.expulso {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
 .escondido {
   display: none;
 }
